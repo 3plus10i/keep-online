@@ -1,0 +1,6 @@
+# 屏蔽虚拟环境和开发中产生的自己的东西
+/.idea/
+/__pycache__/
+/venv/
+note.txt
+
