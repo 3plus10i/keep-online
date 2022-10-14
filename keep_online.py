@@ -67,6 +67,7 @@ class Supervisor:
             print('客户端不在默认位置(self.client_dir)，请将本程序放在DrMain.exe所在目录重新运行！')
         print('Drcom client found: {}'.format(self.client_dir))
         print('----------- Ready to start task -----------')
+        print('')
 
     # 写日志
     def log(self, str_, print_=None):
@@ -124,7 +125,7 @@ class Supervisor:
         n = 0
         while n <= times:
             n += 1
-            delay = basic_delay * n
+            delay = basic_delay * (n-1) + (self.every if self.every < basic_delay else basic_delay)  # 改进首次延迟
             self.log('第{}次延迟重试将在 '.format(n) + self.get_time(delay) + ' ({}秒后)开始'.format(delay))
             time.sleep(delay)  # 启动本函数时说明已经出问题了，应该先延迟再重试
             self.log('正在重启客户端...')
@@ -176,15 +177,18 @@ class Supervisor:
         previous_state = OFFLINE
         while time.time() <= self.__end_time_stamp:
             flag = self.ping_test()
-            if flag == ONLINE and previous_state != ONLINE:
-                self.log('ONLINE')
-                previous_state = ONLINE
-                time.sleep(self.every)
-            elif self.recovering(flag):
+            if flag == ONLINE:
+                if previous_state != ONLINE:
+                    self.log('ONLINE')
+                    previous_state = flag
                 time.sleep(self.every)
             else:
-                self.log('延迟重试超时，任务已退出')
-                return False
+                previous_state = flag
+                if self.recovering(flag):
+                    time.sleep(self.every)
+                else:
+                    self.log('延迟重试超时，任务已退出')
+                    return False
         self.log('EXIT: Task finished')
         return True
 
@@ -194,5 +198,5 @@ sv = Supervisor()
 sv.watch()
 
 # 测试模式
-# sv = Supervisor(every=1, total=6)
+# sv = Supervisor(every=4, total=90)
 # sv.watch()
