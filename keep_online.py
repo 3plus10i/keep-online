@@ -40,7 +40,7 @@ ERROR = 3
 
 class Supervisor:
     # 初始化
-    def __init__(self, total=86400, every=60, log_file="", verbose=True, client_dir=''):
+    def __init__(self, total=86400, every=15, log_file="", verbose=True, client_dir=''):
         self.total = total  # 每次运行本程序后监视时长
         self.every = every  # 重连检查时间间隔秒数，不要太短
         self.log_file = log_file  # 日志文件绝对路径，例如："E:/log.txt"
@@ -86,7 +86,6 @@ class Supervisor:
             q = requests.get(self.__test_url)
             if q.status_code == 200:
                 if self.__test_keyword in q.url:
-                    self.log("ONLINE")
                     return ONLINE
                 else:
                     self.log("UNLOGIN: only LAN")
@@ -174,13 +173,18 @@ class Supervisor:
     def watch(self):
         stop_time_str = time.strftime("%Y%m%dT%H%M%S", time.localtime(self.__end_time_stamp))
         self.log('TASK: Check network every {}s until {}'.format(self.every, stop_time_str))
+        previous_state = OFFLINE
         while time.time() <= self.__end_time_stamp:
             flag = self.ping_test()
-            if flag != ONLINE and not self.recovering(flag):
+            if flag == ONLINE and previous_state != ONLINE:
+                self.log('ONLINE')
+                previous_state = ONLINE
+                time.sleep(self.every)
+            elif self.recovering(flag):
+                time.sleep(self.every)
+            else:
                 self.log('延迟重试超时，任务已退出')
                 return False
-            else:
-                time.sleep(sv.every)
         self.log('EXIT: Task finished')
         return True
 

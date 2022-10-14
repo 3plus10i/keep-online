@@ -2,6 +2,7 @@
 /.idea/
 /__pycache__/
 /venv/
-note.txt
+/dist/
+/build/
 *.txt
-
+*.spec
